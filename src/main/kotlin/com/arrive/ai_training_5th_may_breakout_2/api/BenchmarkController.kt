@@ -1,6 +1,7 @@
 package com.arrive.ai_training_5th_may_breakout_2.api
 
 import com.arrive.ai_training_5th_may_breakout_2.contracts.BenchmarkResponse
+import com.arrive.ai_training_5th_may_breakout_2.contracts.TrafficHistorySeries
 import com.arrive.ai_training_5th_may_breakout_2.service.BenchmarkService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -14,4 +15,7 @@ class BenchmarkController(
 
 	@GetMapping("/benchmark")
 	fun benchmark(): BenchmarkResponse = benchmarkService.benchmark()
+
+	@GetMapping("/benchmark/traffic-history")
+	fun trafficHistory(): List<TrafficHistorySeries> = benchmarkService.trafficHistory()
 }

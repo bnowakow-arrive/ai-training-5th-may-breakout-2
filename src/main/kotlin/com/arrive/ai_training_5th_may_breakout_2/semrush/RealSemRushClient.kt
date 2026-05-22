@@ -3,11 +3,13 @@ package com.arrive.ai_training_5th_may_breakout_2.semrush
 import com.arrive.ai_training_5th_may_breakout_2.contracts.DomainMetricsDto
 import com.arrive.ai_training_5th_may_breakout_2.contracts.GapType
 import com.arrive.ai_training_5th_may_breakout_2.contracts.KeywordGapRowDto
+import com.arrive.ai_training_5th_may_breakout_2.contracts.TrafficHistoryDto
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import java.math.BigDecimal
+import java.time.YearMonth
 
 /**
  * Live SEMRush client. Active only when semrush.live=true.
@@ -53,6 +55,9 @@ class RealSemRushClient(
         competitorDomain: String,
         gapType: GapType,
     ): List<KeywordGapRowDto> {
+        // Ph=phrase, Nq=volume, Cp=CPC, Kd=keyword difficulty,
+        // P0=position of first listed domain (baseDomain), P1=position of second (competitorDomain).
+        // Adding Kd/P0/P1 doesn't charge extra credits — credits are per-row, not per-column.
         val csv = get(
             "type=domain_domains" +
             "&key=$apiKey" +
@@ -60,9 +65,28 @@ class RealSemRushClient(
             "&domain=$baseDomain" +
             "&domains=${gapType.toDomainsParam(baseDomain, competitorDomain)}" +
             "&display_limit=$gapRowLimit" +
-            "&export_columns=Ph,Nq,Cp"
+            "&export_columns=Ph,Nq,Cp,Kd,P0,P1"
         )
         return parseKeywordGap(gapType, csv)
+    }
+
+    override fun fetchTrafficHistory(domain: String, months: Int): List<TrafficHistoryDto> {
+        val current = YearMonth.now()
+        // No batch endpoint exists for monthly history — one call per month per domain.
+        // ~10 credits/call. 12 months × N domains can quickly add up.
+        return (0 until months).map { idx ->
+            val month = current.minusMonths((months - 1 - idx).toLong())
+            val displayDate = "%04d%02d15".format(month.year, month.monthValue)
+            val csv = get(
+                "type=domain_rank" +
+                "&key=$apiKey" +
+                "&domain=$domain" +
+                "&database=$database" +
+                "&display_date=$displayDate" +
+                "&export_columns=Dn,Or,Ot,Oc"
+            )
+            parseMonthlyRanks(month, csv)
+        }
     }
 
     // ── Parsers (internal so unit tests can reach them without a Spring context) ─
@@ -91,17 +115,28 @@ class RealSemRushClient(
             val p = line.split(";")
             if (p.size < 3) return@mapNotNull null
             KeywordGapRowDto(
-                keyword  = p[0].trim(),
-                gapType  = gapType,
-                volume   = p.getOrNull(1)?.toLongOrNull() ?: 0L,
-                cpc      = p.getOrNull(2)?.toBigDecimalOrNull(),
-                // Keyword difficulty and per-domain positions are not available from
-                // domain_domains without additional export columns that carry extra cost.
-                kd                  = null,
-                positionBase        = null,
-                positionCompetitor  = null,
+                keyword            = p[0].trim(),
+                gapType            = gapType,
+                volume             = p.getOrNull(1)?.toLongOrNull() ?: 0L,
+                cpc                = p.getOrNull(2)?.toBigDecimalOrNull(),
+                kd                 = p.getOrNull(3)?.toIntOrNull(),
+                positionBase       = p.getOrNull(4)?.toIntOrNull(),
+                positionCompetitor = p.getOrNull(5)?.toIntOrNull(),
             )
         }
+    }
+
+    internal fun parseMonthlyRanks(month: YearMonth, csv: String): TrafficHistoryDto {
+        val lines = csv.trim().lines()
+        if (lines.size < 2) {
+            return TrafficHistoryDto(month.toString(), 0L, 0L)
+        }
+        val p = lines[1].split(";")
+        return TrafficHistoryDto(
+            month            = month.toString(),
+            organicKeywords  = p.getOrNull(1)?.toLongOrNull() ?: 0L,
+            organicTraffic   = p.getOrNull(2)?.toLongOrNull() ?: 0L,
+        )
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────

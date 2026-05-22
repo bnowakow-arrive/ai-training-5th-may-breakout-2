@@ -1,16 +1,10 @@
 package com.arrive.ai_training_5th_may_breakout_2.ui
 
-// Service contract assumed by this view (P3 must match these signatures):
-//   CompetitorService.list(): List<CompetitorDto>
-//   CompetitorService.create(req: CreateCompetitorRequest): CompetitorDto
-//   RefreshService.refreshAll()
-//   BenchmarkService.benchmark(): BenchmarkResponse
-//   BenchmarkService.keywordGap(competitorId: Long, gapType: GapType): List<KeywordGapRowDto>
-
 import com.arrive.ai_training_5th_may_breakout_2.contracts.BenchmarkResponse
 import com.arrive.ai_training_5th_may_breakout_2.contracts.MetricRow
 import com.arrive.ai_training_5th_may_breakout_2.service.BenchmarkService
 import com.arrive.ai_training_5th_may_breakout_2.service.CompetitorService
+import com.arrive.ai_training_5th_may_breakout_2.service.OpportunityService
 import com.arrive.ai_training_5th_may_breakout_2.service.RefreshService
 import com.vaadin.flow.component.applayout.AppLayout
 import com.vaadin.flow.component.button.Button
@@ -37,10 +31,16 @@ class MainView(
 	private val competitorService: CompetitorService,
 	private val refreshService: RefreshService,
 	private val benchmarkService: BenchmarkService,
+	private val opportunityService: OpportunityService,
 	@Value("\${semrush.gap-row-limit:25}") private val gapRowLimit: Int,
+	@Value("\${semrush.history-months:12}") private val historyMonths: Int,
 ) : AppLayout() {
 
+	private val trafficChartPanel = TrafficChartPanel(benchmarkService)
 	private val benchmarkGrid = Grid<MetricRow>(MetricRow::class.java, false)
+	private val opportunitiesPanel = OpportunitiesPanel(opportunityService) { competitorId ->
+		tabsByCompetitor[competitorId]?.let { tabs.selectedTab = it }
+	}
 	private val tabs = Tabs()
 	private val tabContent = VerticalLayout().apply {
 		setPadding(false)
@@ -48,6 +48,7 @@ class MainView(
 		setWidthFull()
 	}
 	private val tabPanels = mutableMapOf<Tab, KeywordGapPanel>()
+	private val tabsByCompetitor = mutableMapOf<Long, Tab>()
 	private val timestampFormatter: DateTimeFormatter =
 		DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
 
@@ -57,6 +58,8 @@ class MainView(
 		tabs.addSelectedChangeListener { event -> showTab(event.selectedTab) }
 		refreshBenchmark()
 		refreshTabs()
+		trafficChartPanel.reload()
+		opportunitiesPanel.reload()
 	}
 
 	private fun buildHeader(): HorizontalLayout {
@@ -76,7 +79,7 @@ class MainView(
 
 	private fun buildBody(): VerticalLayout {
 		configureBenchmarkGrid()
-		return VerticalLayout(benchmarkGrid, tabs, tabContent).apply {
+		return VerticalLayout(trafficChartPanel, benchmarkGrid, opportunitiesPanel, tabs, tabContent).apply {
 			setSizeFull()
 			setPadding(true)
 			setSpacing(true)
@@ -113,6 +116,7 @@ class MainView(
 		val previouslySelected = tabs.selectedTab?.label
 		tabs.removeAll()
 		tabPanels.clear()
+		tabsByCompetitor.clear()
 		tabContent.removeAll()
 
 		val competitors = competitorService.list().filterNot { it.isOwn }
@@ -126,6 +130,7 @@ class MainView(
 			val tab = Tab(competitor.name)
 			tabs.add(tab)
 			tabPanels[tab] = KeywordGapPanel(competitor, benchmarkService)
+			competitor.id?.let { tabsByCompetitor[it] = tab }
 			if (initial == null || competitor.name == previouslySelected) initial = tab
 		}
 
@@ -145,6 +150,8 @@ class MainView(
 				Notification.show("Added ${request.name}")
 				refreshBenchmark()
 				refreshTabs()
+				trafficChartPanel.reload()
+				opportunitiesPanel.reload()
 			} catch (ex: Exception) {
 				Notification.show("Couldn't add competitor: ${ex.message ?: ex.javaClass.simpleName}")
 			}
@@ -157,11 +164,12 @@ class MainView(
 			Notification.show("Nothing to refresh yet — add a competitor first.")
 			return
 		}
-		val estimate = competitorCount * (10 + 2 * gapRowLimit * 40)
+		// Phase 2 cost: gap rows (40 c × limit × 2 directions) + domain ranks (10) + monthly history (10 × months).
+		val estimate = competitorCount * (10 + 2 * gapRowLimit * 40 + historyMonths * 10)
 		val dialog = ConfirmDialog().apply {
 			setHeader("Refresh all from SEMRush?")
 			setText(
-				"This will refresh $competitorCount competitor(s). " +
+				"This will refresh $competitorCount competitor(s), including $historyMonths months of traffic history. " +
 					"Estimated cost: ~$estimate credits. " +
 					"Live calls run only when SEMRUSH_LIVE=true; otherwise the fake client serves the data.",
 			)
@@ -179,6 +187,8 @@ class MainView(
 			Notification.show("Refresh complete")
 			refreshBenchmark()
 			refreshTabs()
+			trafficChartPanel.reload()
+			opportunitiesPanel.reload()
 		} catch (ex: Exception) {
 			Notification.show("Refresh failed: ${ex.message ?: ex.javaClass.simpleName}")
 		}
