@@ -5,10 +5,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 /**
- * Phase 0 wiring: if no real SemRushClient bean is registered, fall back to FakeSemRushClient.
- *
- * P2: once RealSemRushClient is implemented as @Component (or @Bean), this fake auto-disables
- * via @ConditionalOnMissingBean — no edits needed here.
+ * Default to the fake client. P2: register `RealSemRushClient` as @Component with
+ *   @ConditionalOnProperty(name = "semrush.live", havingValue = "true")
+ * so the real one only kicks in when explicitly flipped on. The 50k/month credit budget
+ * means we keep the fake as the default everywhere — local dev, CI, and the bulk of demo prep.
  */
 @Configuration
 class SemRushClientConfig {

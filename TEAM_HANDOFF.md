@@ -2,6 +2,22 @@
 
 5 people, 2 hours. The baseline is landed and ready to fork from. **Pick your stream and start.**
 
+## ⚠️ HARD CONSTRAINT — SEMRush Credit Budget
+
+> **We have 50,000 SEMRush credits this month for the whole team. Use them very, very reasonably.**
+
+Practical rules baked into the codebase — follow them:
+
+- **Default is the fake client.** `SEMRUSH_LIVE=false` in `.env.example`. Don't flip it during dev. The `FakeSemRushClient` already returns realistic-looking data via `@ConditionalOnMissingBean`, so end-to-end demos work without burning a single credit.
+- **`semrush.live=true` only for**: (a) the live final demo, (b) one deliberate smoke test per workstream after the code is reviewed.
+- **Cache aggressively.** `semrush.cache-ttl-hours=24` — P2/P3 must consult the persisted `DomainMetricsSnapshot` / `KeywordGapRow` before calling SEMRush. If the latest row is < 24h old, reuse it.
+- **Cap result size.** `semrush.gap-row-limit=25`. `domain_domains` charges ~40 credits per returned row — do not ask for hundreds.
+- **No background/scheduled refresh.** Refresh runs ONLY when a user clicks the Refresh button.
+- **Confirm before refresh-all.** P4: the "Refresh all" button must show a confirmation dialog with an estimated credit cost (`competitors × (10 + 2 × gap_row_limit × 40)`).
+- **Rough cost per full refresh** at 4 competitors + Arrive: ~3,200 credits. Budget allows ~15 full refreshes/month — assume teammates demoing also use credits.
+
+If you're about to call SEMRush in a loop, stop and ask the team.
+
 ## What's already done (Phase 0)
 
 - **Gradle deps wired**: Spring Boot 4.0.6, Kotlin 2.2.21, JPA, Postgres driver, Flyway, Spring Web/Validation, **Vaadin 25.1.5**. Run `./gradlew compileKotlin` — it builds clean.
