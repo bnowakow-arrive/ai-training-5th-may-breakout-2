@@ -5,7 +5,11 @@ import com.arrive.ai_training_5th_may_breakout_2.contracts.GapType
 import com.arrive.ai_training_5th_may_breakout_2.contracts.KeywordGapRowDto
 import com.arrive.ai_training_5th_may_breakout_2.service.BenchmarkService
 import com.vaadin.flow.component.grid.Grid
+import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.notification.Notification
+import com.vaadin.flow.component.orderedlayout.FlexComponent
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout
 import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 
@@ -15,20 +19,44 @@ class KeywordGapPanel(
 ) : VerticalLayout() {
 
 	private val toggle = RadioButtonGroup<GapType>().apply {
-		label = "Gap type"
 		setItems(GapType.MISSING, GapType.UNTAPPED)
 		setItemLabelGenerator { it.name }
 		value = GapType.MISSING
+		// Inline the choices next to the label rather than stacking vertically.
+		style.set("--vaadin-radio-group-orientation", "horizontal")
 	}
 	private val grid = Grid<KeywordGapRowDto>(KeywordGapRowDto::class.java, false)
 
 	init {
 		setWidthFull()
 		setPadding(false)
-		setSpacing(true)
+		setSpacing(false)
+		// Visually separate this section from the tabs above so it's obvious the filter and
+		// table below are one unit.
+		style
+			.set("border", "1px solid var(--lumo-contrast-10pct)")
+			.set("border-radius", "var(--lumo-border-radius-l)")
+			.set("background", "var(--lumo-base-color)")
+			.set("padding", "var(--lumo-space-m)")
+			.set("margin-top", "var(--lumo-space-s)")
+
+		val title = H3("Keyword gaps — ${competitor.name}").apply {
+			style.set("margin", "0")
+		}
+		val filterLabel = Span("Show:").apply {
+			style.set("color", "var(--lumo-secondary-text-color)")
+				.set("font-weight", "500")
+		}
+		val header = HorizontalLayout(title, filterLabel, toggle).apply {
+			setWidthFull()
+			defaultVerticalComponentAlignment = FlexComponent.Alignment.CENTER
+			isSpacing = true
+			expand(title)
+		}
+
 		configureGrid()
 		toggle.addValueChangeListener { reload() }
-		add(toggle, grid)
+		add(header, grid)
 		reload()
 	}
 
