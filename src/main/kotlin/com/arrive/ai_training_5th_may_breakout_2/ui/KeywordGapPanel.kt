@@ -27,24 +27,24 @@ class KeywordGapPanel(
 
 	init {
 		// Card-like container so the filter + table read as one unit visually separated
-		// from the competitor tabs above. Using a plain Div sidesteps Aura's :host rules
-		// on vaadin-vertical-layout that override even inline !important styles.
+		// from the competitor tabs above. The app uses Aura theme — Lumo CSS variables
+		// resolve to empty, so we hardcode neutral values instead.
 		style
 			.set("display", "block")
 			.set("width", "100%")
-			.set("border", "1px solid var(--lumo-contrast-20pct)")
-			.set("border-radius", "var(--lumo-border-radius-l)")
-			.set("background", "var(--lumo-base-color)")
-			.set("padding", "var(--lumo-space-m)")
-			.set("margin-top", "var(--lumo-space-s)")
-			.set("box-shadow", "var(--lumo-box-shadow-xs)")
+			.set("border", "1px solid rgba(0, 0, 0, 0.12)")
+			.set("border-radius", "12px")
+			.set("background", "white")
+			.set("padding", "16px")
+			.set("margin-top", "8px")
+			.set("box-shadow", "0 1px 3px rgba(0, 0, 0, 0.06)")
 			.set("box-sizing", "border-box")
 
 		val title = H3("Keyword gaps — ${competitor.name}").apply {
 			style.set("margin", "0")
 		}
 		val filterLabel = Span("Show:").apply {
-			style.set("color", "var(--lumo-secondary-text-color)")
+			style.set("color", "rgba(0, 0, 0, 0.6)")
 				.set("font-weight", "500")
 		}
 		val header = HorizontalLayout(title, filterLabel, toggle).apply {
@@ -52,7 +52,7 @@ class KeywordGapPanel(
 			defaultVerticalComponentAlignment = FlexComponent.Alignment.CENTER
 			isSpacing = true
 			expand(title)
-			style.set("margin-bottom", "var(--lumo-space-m)")
+			style.set("margin-bottom", "12px")
 		}
 
 		configureGrid()
