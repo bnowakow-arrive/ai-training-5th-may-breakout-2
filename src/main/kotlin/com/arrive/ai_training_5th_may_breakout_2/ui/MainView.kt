@@ -95,7 +95,7 @@ class MainView(
 		benchmarkGrid.addColumn { row ->
 			row.fetchedAt?.let { timestampFormatter.format(it) } ?: "never"
 		}.setHeader("Fetched at")
-		benchmarkGrid.setClassNameGenerator { row -> if (row.competitor.isOwn) "own-row" else null }
+		benchmarkGrid.setPartNameGenerator { row -> if (row.competitor.isOwn) "own-row" else null }
 		benchmarkGrid.setHeight("280px")
 		benchmarkGrid.setWidthFull()
 	}
@@ -165,7 +165,7 @@ class MainView(
 					"Estimated cost: ~$estimate credits. " +
 					"Live calls run only when SEMRUSH_LIVE=true; otherwise the fake client serves the data.",
 			)
-			isCancelable = true
+			setCancelable(true)
 			setConfirmText("Refresh")
 			setConfirmButtonTheme("primary")
 			addConfirmListener { runRefreshAll() }
