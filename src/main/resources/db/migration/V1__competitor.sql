@@ -1,0 +1,6 @@
+CREATE TABLE competitor (
+    id     BIGSERIAL PRIMARY KEY,
+    name   VARCHAR(255) NOT NULL,
+    domain VARCHAR(255) NOT NULL UNIQUE,
+    is_own BOOLEAN      NOT NULL DEFAULT FALSE
+);
