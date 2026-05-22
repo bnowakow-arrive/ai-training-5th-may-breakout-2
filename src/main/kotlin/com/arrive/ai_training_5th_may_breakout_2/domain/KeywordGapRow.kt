@@ -3,6 +3,7 @@ package com.arrive.ai_training_5th_may_breakout_2.domain
 import com.arrive.ai_training_5th_may_breakout_2.contracts.GapType
 import jakarta.persistence.*
 import java.math.BigDecimal
+import java.time.Instant
 
 @Entity
 @Table(name = "keyword_gap_row")
@@ -20,4 +21,5 @@ class KeywordGapRow(
     val positionBase: Int?,
     val positionCompetitor: Int?,
     val cpc: BigDecimal?,
+    val fetchedAt: Instant,
 )
