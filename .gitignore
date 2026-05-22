@@ -1,0 +1,31 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### IDE / OS ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.vscode/
+.DS_Store
+
+### Vaadin ###
+node_modules/
+frontend/generated/
+src/main/bundles/
+src/main/frontend/generated/
+package-lock.json
+package.json
+vite.generated.ts
+tsconfig.json
+types.d.ts
+
+### Env ###
+.env

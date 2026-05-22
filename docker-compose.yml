@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: arrive-intel-postgres
+    environment:
+      POSTGRES_USER: arrive
+      POSTGRES_PASSWORD: arrive
+      POSTGRES_DB: arrive_intel
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arrive -d arrive_intel"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: arrive-intel-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SEMRUSH_API_KEY: ${SEMRUSH_API_KEY:-}
+    profiles:
+      - app
+
+volumes:
+  pgdata:
