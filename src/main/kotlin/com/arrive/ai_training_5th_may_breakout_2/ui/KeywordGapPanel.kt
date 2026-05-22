@@ -5,40 +5,40 @@ import com.arrive.ai_training_5th_may_breakout_2.contracts.GapType
 import com.arrive.ai_training_5th_may_breakout_2.contracts.KeywordGapRowDto
 import com.arrive.ai_training_5th_may_breakout_2.service.BenchmarkService
 import com.vaadin.flow.component.grid.Grid
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.FlexComponent
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout
-import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 
 class KeywordGapPanel(
 	private val competitor: CompetitorDto,
 	private val benchmarkService: BenchmarkService,
-) : VerticalLayout() {
+) : Div() {
 
 	private val toggle = RadioButtonGroup<GapType>().apply {
 		setItems(GapType.MISSING, GapType.UNTAPPED)
 		setItemLabelGenerator { it.name }
 		value = GapType.MISSING
-		// Inline the choices next to the label rather than stacking vertically.
-		style.set("--vaadin-radio-group-orientation", "horizontal")
 	}
 	private val grid = Grid<KeywordGapRowDto>(KeywordGapRowDto::class.java, false)
 
 	init {
-		setWidthFull()
-		setPadding(false)
-		setSpacing(false)
-		// Visually separate this section from the tabs above so it's obvious the filter and
-		// table below are one unit.
+		// Card-like container so the filter + table read as one unit visually separated
+		// from the competitor tabs above. Using a plain Div sidesteps Aura's :host rules
+		// on vaadin-vertical-layout that override even inline !important styles.
 		style
-			.set("border", "1px solid var(--lumo-contrast-10pct)")
+			.set("display", "block")
+			.set("width", "100%")
+			.set("border", "1px solid var(--lumo-contrast-20pct)")
 			.set("border-radius", "var(--lumo-border-radius-l)")
 			.set("background", "var(--lumo-base-color)")
 			.set("padding", "var(--lumo-space-m)")
 			.set("margin-top", "var(--lumo-space-s)")
+			.set("box-shadow", "var(--lumo-box-shadow-xs)")
+			.set("box-sizing", "border-box")
 
 		val title = H3("Keyword gaps — ${competitor.name}").apply {
 			style.set("margin", "0")
@@ -52,6 +52,7 @@ class KeywordGapPanel(
 			defaultVerticalComponentAlignment = FlexComponent.Alignment.CENTER
 			isSpacing = true
 			expand(title)
+			style.set("margin-bottom", "var(--lumo-space-m)")
 		}
 
 		configureGrid()
