@@ -6,6 +6,7 @@ import com.arrive.ai_training_5th_may_breakout_2.service.OpportunityService
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.grid.Grid
 import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.component.orderedlayout.FlexComponent
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout
@@ -48,9 +49,17 @@ class OpportunitiesPanel(
 		grid.addColumn { it.kd?.toString() ?: "—" }.setHeader("KD")
 		grid.addColumn { it.competitorName }.setHeader("Competitor")
 		grid.addColumn { it.competitorPosition?.toString() ?: "—" }.setHeader("Their rank")
+		val ourRankHeader = Span("Our rank").apply {
+			element.setAttribute(
+				"title",
+				"Arrive's position in SEMRush's organic results for this keyword. " +
+					"\"not ranked\" means we don't appear in SEMRush's tracked positions (roughly top 100) at all — " +
+					"the biggest opportunity rows are typically of this kind.",
+			)
+		}
 		grid.addColumn { row ->
 			row.ourPosition?.toString() ?: if (row.gapType == GapType.MISSING) "not ranked" else "—"
-		}.setHeader("Our rank")
+		}.setHeader(ourRankHeader)
 		grid.addColumn { it.score }.setHeader("Score")
 		grid.setHeight("300px")
 		grid.setWidthFull()

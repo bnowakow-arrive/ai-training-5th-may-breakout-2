@@ -44,7 +44,11 @@ dependencies {
 
 	runtimeOnly("org.postgresql:postgresql")
 
-	developmentOnly("com.vaadin:vaadin-dev")
+	developmentOnly("com.vaadin:vaadin-dev") {
+		// Copilot's <copilot-main> renders a full-viewport popover with pointer-events:all
+		// and z-index 9999, blocking every click/hover in the app. We don't use it.
+		exclude(group = "com.vaadin", module = "copilot")
+	}
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

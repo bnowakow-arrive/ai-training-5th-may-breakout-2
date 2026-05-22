@@ -41,7 +41,7 @@ class MainView(
 	private val opportunitiesPanel = OpportunitiesPanel(opportunityService) { competitorId ->
 		tabsByCompetitor[competitorId]?.let { tabs.selectedTab = it }
 	}
-	private val tabs = Tabs()
+	private val tabs = Tabs().apply { isAutoselect = false }
 	private val tabContent = VerticalLayout().apply {
 		setPadding(false)
 		setSpacing(false)
@@ -83,6 +83,9 @@ class MainView(
 			setSizeFull()
 			setPadding(true)
 			setSpacing(true)
+			// AppLayout's content slot doesn't scroll on its own; let this layout scroll its
+			// children instead of clipping them when they exceed viewport height.
+			style.set("overflow", "auto")
 		}
 	}
 
@@ -128,13 +131,16 @@ class MainView(
 		var initial: Tab? = null
 		competitors.forEach { competitor ->
 			val tab = Tab(competitor.name)
-			tabs.add(tab)
 			tabPanels[tab] = KeywordGapPanel(competitor, benchmarkService)
 			competitor.id?.let { tabsByCompetitor[it] = tab }
+			tabs.add(tab)
 			if (initial == null || competitor.name == previouslySelected) initial = tab
 		}
 
-		initial?.let { tabs.selectedTab = it }
+		initial?.let {
+			tabs.selectedTab = it
+			showTab(it)
+		}
 	}
 
 	private fun showTab(tab: Tab?) {
