@@ -51,7 +51,7 @@ class FakeSemRushClient : SemRushClient {
 			)
 		}
 		return sample.mapIndexed { index, keyword ->
-			val seed = (keyword.hashCode() + baseDomain.hashCode()).absoluteValue
+			val seed = (keyword.hashCode() + baseDomain.hashCode() + competitorDomain.hashCode()).absoluteValue
 			KeywordGapRowDto(
 				keyword = keyword,
 				gapType = gapType,
