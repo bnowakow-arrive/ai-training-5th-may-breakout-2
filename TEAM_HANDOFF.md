@@ -168,6 +168,44 @@ Don't change these without telling the other workstreams.
 - `README.md`: 1-paragraph summary, "how to run", "what's in / what's out" (mention that LinkedIn/social was descoped from this 2h cut), and a screenshot once P4 is up.
 - Once your DevOps work is done (~30 min), **float to whichever stream is bleeding** — most likely P4. Check in with everyone at the 45-min mark.
 
+## Phase 2 — next cut (post-hackathon)
+
+Phase 1 covered the demo path: add competitors → refresh → see numbers. Phase 2 adds the two features marketing actually asked for once they saw the demo — a traffic trend chart and an "opportunities" view. Assume Phase 1 is live and merged before starting these.
+
+The same credit budget applies. P6 raises the per-refresh cost — read its credit math before you run a live refresh.
+
+### P6 — Monthly traffic chart (90 min)
+**Files you own:** `domain/` (one new entity), `db/migration/V4__traffic_history.sql`, `semrush/` (extend interface + both impls), `service/`, `api/`, `ui/`.
+
+- New entity `DomainTrafficHistorySnapshot(competitor, month: YearMonth, organicTraffic, organicKeywords, fetchedAt)`. Primary key on `(competitor_id, month)` so re-refresh upserts rather than duplicates.
+- Extend `SemRushClient` with `fetchTrafficHistory(domain: String, months: Int = 12): List<TrafficHistoryDto>`. Both impls:
+  - **Fake:** generate 12 months of plausible numbers off the same hash seed already used in `FakeSemRushClient` — give it a gentle upward trend so the chart isn't flat.
+  - **Real:** call `type=domain_rank&display_date=YYYYMM15` once per month per domain. That's 12 calls per domain at ~10 credits each = **~120 credits/domain/refresh on top of the existing spend**. No batch endpoint exists for monthly history; if you find one, use it.
+- `BenchmarkService.trafficHistory(): Map<Long, List<TrafficHistoryDto>>` keyed by competitor id. Cache via the same 24h rule as `refreshMetricsIfStale`.
+- `GET /api/benchmark/traffic-history` — flat JSON of `{competitorId, domain, months: [{month, organicTraffic, organicKeywords}]}`.
+- **UI:** `TrafficChartPanel` inserted above the existing benchmark grid in `MainView`. One line per domain, x = month (last 12), y = organic traffic. Arrive's line thicker + brand colour; competitors muted.
+- **Charts library:** use **Apache ECharts** via a small custom Vaadin component (~50 lines: a `Div` + `@JsModule` that calls `echarts.init`). MIT-licensed, no Vaadin Pro license needed. **Skip Vaadin Charts** — it's a paid Pro add-on and the hackathon budget doesn't cover it.
+- **Updated credit math:** at 4 competitors + Arrive, a full refresh is now `5 × (10 + 2 × 25 × 40 + 12 × 10)` ≈ **10,600 credits** (Phase 1 was ~3,200). Budget allows ~4 full Phase-2 refreshes per month. Update the "Refresh all" `ConfirmDialog` text in `MainView` to reflect the new formula.
+- **Acceptance:** clicking Refresh-all populates 12 months for every domain; the chart shows 5 trend lines; Arrive is visually distinct; re-clicking within 24h serves cached data (no SEMRush calls).
+
+### P7 — Opportunity scoring (45 min)
+**Files you own:** `service/OpportunityService.kt`, `api/OpportunityController.kt`, `ui/OpportunitiesPanel.kt`.
+
+- "Biggest opportunities" = keywords where a competitor ranks well and Arrive either doesn't rank (`MISSING`) or ranks much worse (`UNTAPPED`). Pure read over already-persisted `KeywordGapRow`s — **no new SEMRush calls**.
+- Scoring formula:
+  ```
+  competitorStrength = (101 - positionCompetitor) / 100         // 1.0 = #1, 0.01 = #100
+  ourWeakness        = positionBase?.let { (it - positionCompetitor).coerceAtLeast(0) } ?: 100
+  difficultyFactor   = 100 / ((kd ?: 50) + 10)
+  score              = volume × competitorStrength × ourWeakness × difficultyFactor / 100
+  ```
+  Tune the constants once you see real numbers — the shape (high volume × competitor rank × gap × ease) is what matters.
+- `OpportunityService.topOpportunities(limit: Int = 10): List<OpportunityDto>` — score every gap row across every competitor, sort desc, take top N. Each row carries the source competitor name so the UI can show it.
+- `GET /api/opportunities?limit=10` returns the same payload.
+- **UI:** `OpportunitiesPanel` inserted **between** the benchmark grid and the per-competitor tabs in `MainView`. Compact table: Keyword | Volume | KD | Competitor | Their position | Our position | Score. Default 10 rows; "Show 25" expander. Score column right-aligned, bold.
+- **⚠️ Data dependency on P2:** `RealSemRushClient.parseKeywordGap` currently sets `kd`, `positionBase`, and `positionCompetitor` to `null` — they were skipped to save credits. P7 needs them. Before flipping `SEMRUSH_LIVE=true` for opportunities, P2 must add `Kd`, `Po` to the `export_columns` query string for `domain_domains` (no extra per-row credit, but verify against the [API docs](https://developer.semrush.com/api/seo/domain-reports/)). With the fake client, scoring works today.
+- **Acceptance:** with the fake client, `GET /api/opportunities` returns 10 ranked rows in score-desc order; the UI panel shows them above the tabs; clicking a row jumps to that competitor's tab (bonus).
+
 ## Known issues / footguns
 
 - **Podman socket**: `docker compose` and `podman compose` both fail with a "missing socket" error on this team's setup. Use `podman-compose` (the standalone Python binary). Resolved.
@@ -180,5 +218,5 @@ Don't change these without telling the other workstreams.
 
 - LinkedIn / Facebook / Instagram / TikTok mentions. **SEMRush's public API has no documented endpoint for these.** Confirmed with the marketing teammate at planning time.
 - Sentiment analysis.
-- Auth, multi-tenant, history charts, scheduled refresh.
+- Auth, multi-tenant, scheduled / background refresh. (Monthly traffic charts moved **into** scope — see P6.)
 - Anything pretty. The demo path is: add competitors → refresh → see numbers. Ship that, then polish.
