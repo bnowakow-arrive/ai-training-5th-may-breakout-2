@@ -1,15 +1,14 @@
 CREATE TABLE keyword_gap_row (
-    id                  BIGSERIAL      PRIMARY KEY,
-    competitor_id       BIGINT         NOT NULL REFERENCES competitor(id) ON DELETE CASCADE,
-    keyword             VARCHAR(512)   NOT NULL,
-    gap_type            VARCHAR(16)    NOT NULL,
-    volume              BIGINT         NOT NULL,
-    kd                  INTEGER,
-    position_base       INTEGER,
-    position_competitor INTEGER,
-    cpc                 NUMERIC(10, 2),
-    fetched_at          TIMESTAMP WITH TIME ZONE NOT NULL
+    id                   BIGSERIAL     PRIMARY KEY,
+    competitor_id        BIGINT        NOT NULL REFERENCES competitors(id) ON DELETE CASCADE,
+    keyword              VARCHAR(500)  NOT NULL,
+    gap_type             VARCHAR(20)   NOT NULL,
+    volume               BIGINT        NOT NULL,
+    kd                   INTEGER,
+    position_base        INTEGER,
+    position_competitor  INTEGER,
+    cpc                  NUMERIC(10, 2),
+    fetched_at           TIMESTAMPTZ   NOT NULL
 );
 
-CREATE INDEX idx_keyword_gap_competitor_type
-    ON keyword_gap_row (competitor_id, gap_type);
+CREATE INDEX idx_kgr_competitor_type ON keyword_gap_row (competitor_id, gap_type);
