@@ -6,7 +6,7 @@ CREATE TABLE domain_metrics_snapshot (
     organic_traffic  BIGINT         NOT NULL,
     organic_cost     NUMERIC(18, 2) NOT NULL,
     top10_keywords   BIGINT         NOT NULL,
-    fetched_at       TIMESTAMP      NOT NULL
+    fetched_at       TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX idx_domain_metrics_competitor_fetched

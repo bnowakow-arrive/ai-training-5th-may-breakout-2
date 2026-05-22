@@ -8,7 +8,7 @@ CREATE TABLE keyword_gap_row (
     position_base       INTEGER,
     position_competitor INTEGER,
     cpc                 NUMERIC(10, 2),
-    fetched_at          TIMESTAMP      NOT NULL
+    fetched_at          TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX idx_keyword_gap_competitor_type
