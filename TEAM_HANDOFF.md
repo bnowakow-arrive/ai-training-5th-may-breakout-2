@@ -27,6 +27,58 @@ If you're about to call SEMRush in a loop, stop and ask the team.
 - **`application.properties`** wired to Postgres + Flyway + SEMRush key. `application-docker.properties` overrides for compose.
 - **Package skeleton** created with `_workstream.kt` markers showing who owns what — delete those files as you add real code.
 
+## Install prerequisites (first time on this machine)
+
+You need a JDK 21 and a container runtime. Podman is the team default; Docker also works but we don't test it.
+
+### macOS
+
+```bash
+# JDK 21 (skip if you already have it)
+brew install --cask temurin@21
+
+# Podman + the standalone podman-compose binary (NOT the `podman compose` subcommand)
+brew install podman podman-compose
+podman machine init
+podman machine start
+```
+
+### Linux — Debian / Ubuntu
+
+```bash
+sudo apt update
+sudo apt install -y openjdk-21-jdk podman
+# podman-compose is in newer repos; pip is the safe fallback
+sudo apt install -y podman-compose || pipx install podman-compose
+```
+
+### Linux — Fedora / RHEL
+
+```bash
+sudo dnf install -y java-21-openjdk-devel podman podman-compose
+```
+
+### Linux — Arch
+
+```bash
+sudo pacman -S jdk21-openjdk podman podman-compose
+```
+
+### Windows (PowerShell, admin)
+
+```powershell
+winget install EclipseAdoptium.Temurin.21.JDK
+winget install RedHat.Podman
+podman machine init
+podman machine start
+# podman-compose via pipx (install Python first if needed: winget install Python.Python.3.12)
+pipx install podman-compose
+```
+
+### If you really must use Docker instead
+
+The `docker-compose.yml` works with Docker too — just substitute `docker compose` for `podman-compose` everywhere below. macOS: `brew install --cask docker`. Ubuntu: `sudo apt install docker.io docker-compose-plugin`. Verify with `docker info`.
+
 ## Start here (every teammate, one minute)
 
 ```bash
